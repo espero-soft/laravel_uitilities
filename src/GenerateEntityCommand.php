@@ -40,13 +40,13 @@ class GenerateEntityCommand extends Command
 
             if (isset($data['type']) && !isset($data['relationType'])) {
                 $this->fields[] = [
-                    'field' => Str::lower($field),
+                    'field' => $field,
                     'type' => Str::lower($data['type']),
                     'relationType' => null, // Assurez-vous de définir la relation sur null si ce n'est pas un champ de relation
                 ];
             } elseif (isset($data['entityRelation']) && isset($data['relationType'])) {
                 $this->fields[] = [
-                    'field' => Str::lower($field),
+                    'field' => $field,
                     'type' => null, // Assurez-vous de définir le type sur null si ce n'est pas un champ de type
                     'entityRelation' => $data['entityRelation'],
                     'relationType' => $data['relationType'],
