@@ -26,7 +26,10 @@ class GenerateEntityCommand extends Command
                 'name' => $this->entityName,
             ]);
             $this->action = "_CREATE";
-        }else{
+
+
+        } else {
+            // Le modèle existe déjà
             $this->info('Model : ' . $this->entityName . ' is already created ');
             $this->action = "_UPDATE";
         }
@@ -37,13 +40,13 @@ class GenerateEntityCommand extends Command
 
             if (isset($data['type']) && !isset($data['relationType'])) {
                 $this->fields[] = [
-                    'field' => $field,
-                    'type' => $data['type'],
+                    'field' => Str::lower($field),
+                    'type' => Str::lower($data['type']),
                     'relationType' => null, // Assurez-vous de définir la relation sur null si ce n'est pas un champ de relation
                 ];
             } elseif (isset($data['entityRelation']) && isset($data['relationType'])) {
                 $this->fields[] = [
-                    'field' => $field,
+                    'field' => Str::lower($field),
                     'type' => null, // Assurez-vous de définir le type sur null si ce n'est pas un champ de type
                     'entityRelation' => $data['entityRelation'],
                     'relationType' => $data['relationType'],
@@ -238,6 +241,14 @@ class GenerateEntityCommand extends Command
         $fileContent = $this->replaceUpMethodContent($fileContent, $newFields, $tableName,  $fieldsToRelation);
 
         $result = file_put_contents($migrationFile, $fileContent);
+
+        // ajout de $fillable
+        $fillableFields = array_map(function ($field) {
+            return "'$field'";
+        }, array_column($this->fields, 'field'));
+
+
+        $this->updateModelFillable($this->entityName, $fillableFields);
     }
     protected function generateMigrationUpdateFile()
     {
@@ -310,6 +321,14 @@ class GenerateEntityCommand extends Command
         $fileContent = $this->replaceUpMethodContent($fileContent, $newFields, $tableName,  $fieldsToRelation);
 
         $result = file_put_contents($migrationFile, $fileContent);
+
+        // ajout de $fillable
+        $fillableFields = array_map(function ($field) {
+            return "'$field'";
+        }, array_column($this->fields, 'field'));
+
+
+        $this->updateModelFillable($this->entityName, $fillableFields);
     }
 
     protected function replaceUpMethodContent($fileContent, $newFields, $tableName,  $fieldsToRelation = null)
@@ -425,6 +444,62 @@ class GenerateEntityCommand extends Command
 
         return null;
     }
+
+    // Ajoutez cette méthode dans votre classe GenerateEntityCommand
+    protected function updateModelFillable($modelName, $fillableArray)
+    {
+        $modelFile = $this->findModelFile($modelName);
+
+        if ($modelFile) {
+            // Lire le contenu du fichier du modèle
+            $fileContent = file_get_contents($modelFile);
+
+            // Recherche du tableau fillable
+            $fillablePosition = strpos($fileContent, 'protected $fillable');
+
+            if ($fillablePosition !== false) {
+                // Si le tableau fillable est trouvé, mettre à jour son contenu
+                $fillableStart = strpos($fileContent, '[', $fillablePosition);
+                $fillableEnd = strpos($fileContent, ']', $fillableStart);
+
+
+                // Extraire le contenu du tableau fillable et le convertir en tableau
+                $existingFillableString = substr($fileContent, $fillableStart + 1, $fillableEnd - $fillableStart - 1);
+                $existingFillable = explode(', ', $existingFillableString);
+
+                // Mettre à jour le contenu du tableau fillable avec les nouveaux champs
+                $newFillable = array_merge($existingFillable, $fillableArray);
+                $newFillableContent = '[' . implode(', ', $newFillable) . ']';
+
+                // Remplacer le contenu du tableau fillable existant par le nouveau contenu
+                $fileContent = substr_replace($fileContent, $newFillableContent, $fillableStart, $fillableEnd - $fillableStart + 1);
+
+                // Écrire le contenu modifié dans le fichier
+                file_put_contents($modelFile, $fileContent);
+
+                $this->info("Fillable fields updated in $modelName model.");
+            } else {
+                // Si le tableau fillable n'est pas trouvé, ajouter le tableau fillable au modèle
+
+                // Trouver la position de la dernière accolade fermante dans le fichier
+                $lastBracePosition = strrpos($fileContent, '}');
+
+                // Construire le contenu du nouveau tableau fillable
+                $newFillableContent = "\n\tprotected \$fillable = [" . implode(', ', $fillableArray) . "];\n}";
+
+                // Insérer le contenu du nouveau tableau fillable avant la dernière accolade fermante
+                $fileContent = substr_replace($fileContent, $newFillableContent, $lastBracePosition, 1);
+
+                // Écrire le contenu modifié dans le fichier
+                file_put_contents($modelFile, $fileContent);
+
+                $this->info("Fillable fields added to $modelName model.");
+            }
+        } else {
+            $this->error("Model file not found for $modelName");
+        }
+    }
+
 
     protected function updateModel($modelName)
     {
