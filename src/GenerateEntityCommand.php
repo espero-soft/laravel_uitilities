@@ -397,8 +397,8 @@ class GenerateEntityCommand extends Command
                     \$table->foreignIdFor(\\App\\Models\\{$field['entityRelation']}::class)->constrained()->onDelete('cascade');
                     \$table->primary(['".Str::singular(strtolower($tableName))."_id','".Str::singular(strtolower($field['entityRelation']))."_id']);
                 ";
-                $methodContent_1 = "\n\t\treturn \$this->hasMany(\\App\\Models\\{$field['entityRelation']}::class);\n\t";
-                $methodContent_2 = "\n\t\treturn \$this->hasMany(\\App\\Models\\{$this->entityName}::class);\n\t";
+                $methodContent_1 = "\n\t\treturn \$this->belongsToMany(\\App\\Models\\{$field['entityRelation']}::class);\n\t";
+                $methodContent_2 = "\n\t\treturn \$this->belongsToMany(\\App\\Models\\{$this->entityName}::class);\n\t";
                 $methodName_1 = Str::plural($newTableName);
                 $methodName_2 = Str::plural($tableName);
                 $this->updateModelWithMethod($this->entityName, $methodName_1, $methodContent_1);
