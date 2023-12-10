@@ -392,7 +392,11 @@ class GenerateEntityCommand extends Command
 
             } elseif ($field['relationType'] === "ManyToMany") {
                 // Gestion ManyToMany
-                $newUpMethod .= "\t\tSchema::create('" . Str::singular($tableName) . "_" . Str::singular($newTableName) . "', function (Blueprint \$table) {
+                $tab = collect([
+                    Str::singular($tableName),
+                    Str::singular($newTableName),
+                ])->sort()->implode('_');
+                $newUpMethod .= "\t\tSchema::create('" . $tab . "', function (Blueprint \$table) {
                     \$table->foreignIdFor(\\App\\Models\\{$this->entityName}::class)->constrained()->onDelete('cascade');
                     \$table->foreignIdFor(\\App\\Models\\{$field['entityRelation']}::class)->constrained()->onDelete('cascade');
                     \$table->primary(['".Str::singular(strtolower($tableName))."_id','".Str::singular(strtolower($field['entityRelation']))."_id']);
