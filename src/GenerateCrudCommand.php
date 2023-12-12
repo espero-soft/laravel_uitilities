@@ -32,130 +32,134 @@ class GenerateCrudCommand extends Command
 
     public function createController(){
 
-        Artisan::call('make:request ' . ucfirst($this->entity) . 'FormRequest');
-        Artisan::call('make:controller ' . ucfirst($this->entity) . 'Controller --resource');
+        // Artisan::call('make:request ' . ucfirst($this->entity) . 'FormRequest');
+        // Artisan::call('make:controller ' . ucfirst($this->entity) . 'Controller --resource');
         $EntityName = ucfirst($this->entity);
         $entityName = lcfirst($this->entity);
         $entityNames = Str::plural($this->entity);
 
         $contentController = <<<EOD
-<?php
+        <?php
 
-namespace App\Http\Controllers;
+        namespace App\Http\Controllers;
 
-use App\Models\\$EntityName;
-use Illuminate\View\View;
-use Illuminate\Http\Request;
-use Illuminate\Http\RedirectResponse;
-use App\Http\Requests\\{$EntityName}FormRequest;
-use Illuminate\Support\Facades\Storage;
+        use App\Models\\$EntityName;
+        use Illuminate\View\View;
+        use Illuminate\Http\Request;
+        use Illuminate\Http\RedirectResponse;
+        use App\Http\Requests\\{$EntityName}FormRequest;
+        use Illuminate\Support\Facades\Storage;
 
-class {$EntityName}Controller extends Controller
-{
-    public function index(): View
-    {
-        \$$entityNames = $EntityName::orderBy('created_at', 'desc')->paginate(5);
-        return view('{$entityName}/index', ['$entityNames' => \$$entityNames]);
-    }
+        class {$EntityName}Controller extends Controller
+        {
+            public function index(): View
+            {
+                \$$entityNames = $EntityName::orderBy('created_at', 'desc')->paginate(5);
+                return view('{$entityName}/index', ['$entityNames' => \$$entityNames]);
+            }
 
-    public function show(\$id): View
-    {
-        \$$entityName = $EntityName::findOrFail(\$id);
+            public function show(\$id): View
+            {
+                \$$entityName = $EntityName::findOrFail(\$id);
 
-        return view('{$entityName}/show',['$entityName' => \$$entityName]);
-    }
-    public function create(): View
-    {
-        return view('{$entityName}/create');
-    }
+                return view('{$entityName}/show',['$entityName' => \$$entityName]);
+            }
+            public function create(): View
+            {
+                return view('{$entityName}/create');
+            }
 
-    public function edit(\$id): View
-    {
-        \$$entityName = $EntityName::findOrFail(\$id);
-        return view('{$entityName}/edit', ['$entityName' => \$$entityName]);
-    }
+            public function edit(\$id): View
+            {
+                \$$entityName = $EntityName::findOrFail(\$id);
+                return view('{$entityName}/edit', ['$entityName' => \$$entityName]);
+            }
 
-    public function store({$EntityName}FormRequest \$req): RedirectResponse
-    {
-        \$data = \$req->validated();
-        \$$entityName = $EntityName::create(\$data);
-        return redirect()->route('admin.{$entityName}.show', ['id' => \${$entityName}->id]);
-    }
+            public function store({$EntityName}FormRequest \$req): RedirectResponse
+            {
+                \$data = \$req->validated();
+                \$$entityName = $EntityName::create(\$data);
+                return redirect()->route('admin.{$entityName}.show', ['id' => \${$entityName}->id]);
+            }
 
-    public function update($EntityName \$$entityName, {$EntityName}FormRequest \$req)
-    {
-        \$data = \$req->validated();
-        \${$entityName}->update(\$data);
+            public function update($EntityName \$$entityName, {$EntityName}FormRequest \$req)
+            {
+                \$data = \$req->validated();
+                \${$entityName}->update(\$data);
 
-        return redirect()->route('admin.{$entityName}.show', ['id' => \${$entityName}->id]);
-    }
+                return redirect()->route('admin.{$entityName}.show', ['id' => \${$entityName}->id]);
+            }
 
-    public function delete($EntityName \$$entityName)
-    {
-        \${$entityName}->delete();
+            public function delete($EntityName \$$entityName)
+            {
+                \${$entityName}->delete();
 
-        return [
-            'isSuccess' => true
-        ];
-    }
-}
-EOD;
+                return [
+                    'isSuccess' => true
+                ];
+            }
+        }
+        EOD;
 
-$rules = '';
-$fields = $this->getFields();
-$count = count($fields);
+        $rules = '';
+        $fields = $this->getFields();
+        $count = count($fields);
 
-foreach ($fields as $index => $field) {
-    if ($index === $count - 1) {
-        $rules .= "'$field' => 'required'\n\t\t\t";
-    } else {
-        $rules .= "'$field' => 'required',\n\t\t\t";
-    }
-}
+        foreach ($fields as $index => $field) {
+            if ($index === $count - 1) {
+                $rules .= "'$field' => 'required'\n\t\t\t";
+            } else {
+                $rules .= "'$field' => 'required',\n\t\t\t";
+            }
+        }
 
-$contentRequests = <<<EOD
-<?php
+        $contentRequests = <<<EOD
+        <?php
 
-namespace App\Http\Requests;
+        namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
+        use Illuminate\Foundation\Http\FormRequest;
 
-class {$EntityName}FormRequest extends FormRequest
-{
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
+        class {$EntityName}FormRequest extends FormRequest
+        {
+            /**
+             * Determine if the user is authorized to make this request.
+             */
+            public function authorize(): bool
+            {
+                return true;
+            }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
-    public function rules(): array
-    {
-        return [
-            //
-            $rules
-        ];
-    }
-    public function prepareForValidation()
-    {
-        \$this->merge([]);
-    }
-}
-EOD;
+            /**
+             * Get the validation rules that apply to the request.
+             *
+             * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+             */
+            public function rules(): array
+            {
+                return [
+                    //
+                    $rules
+                ];
+            }
+            public function prepareForValidation()
+            {
+                \$this->merge([]);
+            }
+        }
+        EOD;
 
+        $controllerPath = app_path('Http/Controllers/' . $EntityName . 'Controller.php');
+        $formRequestPath = app_path('Http/Requests/' . $EntityName . 'FormRequest.php');
 
+        // Vérification de l'existence des fichiers
+        if (!file_exists($controllerPath)) {
+            file_put_contents($controllerPath, $contentController);
+        }
 
-
-                file_put_contents(app_path('Http/Controllers/' . $EntityName . 'Controller.php'), $contentController);
-                file_put_contents(app_path('Http/Requests/' . $EntityName . 'FormRequest.php'), $contentRequests);
-
-
+        if (!file_exists($formRequestPath)) {
+            file_put_contents($formRequestPath, $contentRequests);
+        }
     }
     public function createViews()
     {
@@ -167,6 +171,9 @@ EOD;
             File::makeDirectory($directory, 0755, true);
         }
 
+        $this->info("#######################################");
+        $this->info("###       Create CRUD Files         ###");
+        $this->info("#######################################");
         $this->createViewForm();
         $this->createViewIndex();
         $this->createViewCreate();
@@ -211,7 +218,7 @@ EOD;
             EOD;
 
         File::put(resource_path('views/' . $this->entity . '/show.blade.php'), $viewContent);
-        $this->info('Create : resources/views/' . $this->entity . '/show.blade.php');
+        $this->info('5- Show Data Template : resources/views/' . $this->entity . '/show.blade.php');
     }
 
     protected function createViewCreate()
@@ -250,7 +257,7 @@ EOD;
         EOD;
 
         File::put(resource_path('views/' . $this->entity . '/create.blade.php'), $viewContent);
-        $this->info('Created: resources/views/' . $this->entity . '/create.blade.php');
+        $this->info('3- Create Data Template : resources/views/' . $this->entity . '/create.blade.php');
     }
     protected function createViewEdit()
     {
@@ -288,7 +295,7 @@ EOD;
         EOD;
 
         File::put(resource_path('views/' . $this->entity . '/edit.blade.php'), $viewContent);
-        $this->info('Create : resources/views/' . $this->entity . '/edit.blade.php');
+        $this->info('4- Edit Data Template : resources/views/' . $this->entity . '/edit.blade.php');
     }
     protected function createViewForm()
     {
@@ -321,7 +328,7 @@ EOD;
         EOD;
 
         File::put(resource_path('views/' . $this->entity .'/'. $this->entity.'Form.blade.php'), $viewContent);
-        $this->info('Create : resources/views/' . $this->entity .'/'. $this->entity.'Form.blade.php');
+        $this->info('1- Create Form template : resources/views/' . $this->entity .'/'. $this->entity.'Form.blade.php');
     }
 
     protected function createViewIndex()
@@ -461,7 +468,7 @@ EOD;
                         EOD;
 
             File::put(resource_path('views/' . $this->entity . '/index.blade.php'), $content);
-            $this->info('Create : resources/views/' . $this->entity . '/index.blade.php');
+            $this->info('2- Data List template : resources/views/' . $this->entity . '/index.blade.php');
     }
 
     protected function createRoutes()
