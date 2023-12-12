@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Artisan;
 class GenerateCrudCommand extends Command
 {
     protected $entity = '';
+    protected $entityNames = '';
 
     protected $signature = 'generate:crud {entity}';
 
@@ -18,6 +19,7 @@ class GenerateCrudCommand extends Command
     public function handle()
     {
         $this->entity = Str::lower($this->argument('entity'));
+        $this->entityNames = Str::plural($this->entity);
 
         // Logique pour générer les fichiers du CRUD ici
         // Par exemple, génération de contrôleurs, de routes, de vues, etc.
@@ -55,24 +57,24 @@ class GenerateCrudCommand extends Command
             public function index(): View
             {
                 \$$entityNames = $EntityName::orderBy('created_at', 'desc')->paginate(5);
-                return view('{$entityName}/index', ['$entityNames' => \$$entityNames]);
+                return view('{$entityNames}/index', ['$entityNames' => \$$entityNames]);
             }
 
             public function show(\$id): View
             {
                 \$$entityName = $EntityName::findOrFail(\$id);
 
-                return view('{$entityName}/show',['$entityName' => \$$entityName]);
+                return view('{$entityNames}/show',['$entityName' => \$$entityName]);
             }
             public function create(): View
             {
-                return view('{$entityName}/create');
+                return view('{$entityNames}/create');
             }
 
             public function edit(\$id): View
             {
                 \$$entityName = $EntityName::findOrFail(\$id);
-                return view('{$entityName}/edit', ['$entityName' => \$$entityName]);
+                return view('{$entityNames}/edit', ['$entityName' => \$$entityName]);
             }
 
             public function store({$EntityName}FormRequest \$req): RedirectResponse
@@ -163,7 +165,7 @@ class GenerateCrudCommand extends Command
     }
     public function createViews()
     {
-        $directory = resource_path('views/' . $this->entity);
+        $directory = resource_path('views/' . Str::plural($this->entity));
 
         // Vérifier si le dossier existe déjà
         if (!File::isDirectory($directory)) {
@@ -187,6 +189,7 @@ class GenerateCrudCommand extends Command
     {
         $content = '<div class="data-line">';
         $entityName = ucfirst($this->entity);
+        $entityNames = Str::plural($this->entity);
         $entityInstance = Str::camel($this->entity); // Instance de l'entité
         foreach ($this->getFields() as $field) {
             if ($content !== '') {
@@ -202,28 +205,32 @@ class GenerateCrudCommand extends Command
             @extends('base')
 
             @section('content')
-                <h1>Show $entityName</h1>
-                <a href="{{ route('admin.{$entityInstance}.index') }}\" class=\"btn btn-success btn-sm\">
-                    <button class="btn btn-success">
-                        Home
-                    </button>
-                </a>
-                $content
-                <a href="{{ route('admin.{$entityInstance}.edit', ['id' => \${$entityInstance}->id]) }}" class=\"btn btn-warning btn-sm\">
-                    <button class="btn btn-success">
-                        Edit
-                    </button>
-                </a>
+                <div class="container">
+                    <h1>Show $entityName</h1>
+
+                    <a href="{{ route('admin.{$entityInstance}.index') }}\" class=\"btn btn-success btn-sm\">
+                        <button class="btn btn-success my-1">
+                            Home
+                        </button>
+                    </a>
+                    $content
+                    <a href="{{ route('admin.{$entityInstance}.edit', ['id' => \${$entityInstance}->id]) }}" class=\"btn btn-warning btn-sm\">
+                        <button class="btn btn-success my-1">
+                            Edit
+                        </button>
+                    </a>
+                </div>
             @endsection
             EOD;
 
-        File::put(resource_path('views/' . $this->entity . '/show.blade.php'), $viewContent);
-        $this->info('5- Show Data Template : resources/views/' . $this->entity . '/show.blade.php');
+        File::put(resource_path('views/' . $this->entityNames . '/show.blade.php'), $viewContent);
+        $this->info('5- Show Data Template : resources/views/' . $this->entityNames . '/show.blade.php');
     }
 
     protected function createViewCreate()
     {
         $entityName = ucfirst($this->entity);
+        $entityNames = Str::plural($this->entity);
         $entityInstance = Str::camel($this->entity); // Instance de l'entité
 
 
@@ -231,19 +238,26 @@ class GenerateCrudCommand extends Command
         @extends('base')
 
         @section('content')
+        <div class="container">
             <h1>Create {$entityName}</h1>
-            <a href="{{ route('admin.{$entityInstance}.index') }}" class="btn btn-success btn-sm">
-                <button class="btn btn-success">
+            <a href="{{ route('admin.{$entityInstance}.index') }}" class="">
+                <button class="btn btn-success my-1">
                     Home
                 </button>
             </a>
-            @include('{$entityInstance}/{$entityInstance}Form')
+            @include('{$this->entityNames}/{$entityInstance}Form')
+                </div>
         @endsection
         @section('scripts')
             <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
             <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
             <script src="https://cdn.ckeditor.com/ckeditor5/40.1.0/classic/ckeditor.js"></script>
             <script>
+                ClassicEditor
+                    .create( document.querySelector( '#description' ) )
+                    .catch( error => {
+                        console.error( error );
+                    } );
                 ClassicEditor
                     .create( document.querySelector( '#content' ) )
                     .catch( error => {
@@ -256,12 +270,13 @@ class GenerateCrudCommand extends Command
         @endsection
         EOD;
 
-        File::put(resource_path('views/' . $this->entity . '/create.blade.php'), $viewContent);
-        $this->info('3- Create Data Template : resources/views/' . $this->entity . '/create.blade.php');
+        File::put(resource_path('views/' . $this->entityNames . '/create.blade.php'), $viewContent);
+        $this->info('3- Create Data Template : resources/views/' . $this->entityNames . '/create.blade.php');
     }
     protected function createViewEdit()
     {
         $entityName = ucfirst($this->entity);
+        $entityNames = Str::plural($this->entity);
         $entityInstance = Str::camel($this->entity); // Instance de l'entité
 
 
@@ -269,19 +284,26 @@ class GenerateCrudCommand extends Command
         @extends('base')
 
         @section('content')
-            <h1>Edit {$entityName}</h1>
-            <a href="{{ route('admin.{$entityInstance}.index') }}" class="btn btn-success btn-sm">
-            <button class="btn btn-success">
-                Home
-            </button>
-        </a>
-            @include('{$entityInstance}/{$entityInstance}Form', ['$entityInstance' => \$$entityInstance])
+            <div class="container">
+                <h1>Edit {$entityName}</h1>
+                <a href="{{ route('admin.{$entityInstance}.index') }}" class="">
+                    <button class="btn btn-success my-1">
+                        Home
+                    </button>
+                </a>
+                @include('{$this->entityNames}/{$entityInstance}Form', ['$entityInstance' => \$$entityInstance])
+            </div>
         @endsection
         @section('scripts')
             <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
             <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
             <script src="https://cdn.ckeditor.com/ckeditor5/40.1.0/classic/ckeditor.js"></script>
             <script>
+            ClassicEditor
+                    .create( document.querySelector( '#description' ) )
+                    .catch( error => {
+                        console.error( error );
+                    } );
                 ClassicEditor
                     .create( document.querySelector( '#content' ) )
                     .catch( error => {
@@ -294,12 +316,13 @@ class GenerateCrudCommand extends Command
         @endsection
         EOD;
 
-        File::put(resource_path('views/' . $this->entity . '/edit.blade.php'), $viewContent);
-        $this->info('4- Edit Data Template : resources/views/' . $this->entity . '/edit.blade.php');
+        File::put(resource_path('views/' . $this->entityNames . '/edit.blade.php'), $viewContent);
+        $this->info('4- Edit Data Template : resources/views/' . $this->entityNames . '/edit.blade.php');
     }
     protected function createViewForm()
     {
         $entityName = ucfirst($this->entity);
+        $entityNames = Str::plural($this->entity); // Instance de l'entité
         $entityInstance = Str::camel($this->entity); // Instance de l'entité
 
         $formAction = "{{ isset(\${$entityInstance}) ? route('admin.{$entityInstance}.update', ['{$entityInstance}' => \${$entityInstance}->id]) : route('admin.{$entityInstance}.store') }}";
@@ -310,13 +333,19 @@ class GenerateCrudCommand extends Command
         HTML;
 
         foreach ($this->getFields() as $field) {
-            $content .= "\n\t\t<input type=\"text\" class=\"form-control\" name=\"{$field}\" placeholder=\"{$field} ...\" id=\"{$field}\" value=\"{{ old('{$field}', isset(\${$entityInstance}) ? \${$entityInstance}->{$field} : '') }}\">
+            if ($field === "description" || $field === "content") {
+                $content .= "\n\t\t<textarea class=\"form-control my-1\" name=\"{$field}\" placeholder=\"{$field} ...\" id=\"{$field}\">{{ old('{$field}', isset(\${$entityInstance}) ? \${$entityInstance}->{$field} : '') }}</textarea>\n";
+            } else {
+                $content .= "\n\t\t<input type=\"text\" class=\"form-control my-1\" name=\"{$field}\" placeholder=\"{$field} ...\" id=\"{$field}\" value=\"{{ old('{$field}', isset(\${$entityInstance}) ? \${$entityInstance}->{$field} : '') }}\">\n";
+            }
+        
+            $content .= <<<HTML
                 @error('$field')
-                        <div class=\"error\">
-                            {{ \$message }}
-                        </div>
+                    <div class="error">
+                        {{ \$message }}
+                    </div>
                 @enderror
-            ";
+            HTML;
         }
 
         $content .= "\n\t\t<button class=\"btn btn-primary mt-1\"> {{ isset(\${$entityInstance}) ? 'Update' : 'Create' }}</button>";
@@ -327,8 +356,8 @@ class GenerateCrudCommand extends Command
             {$content}
         EOD;
 
-        File::put(resource_path('views/' . $this->entity .'/'. $this->entity.'Form.blade.php'), $viewContent);
-        $this->info('1- Create Form template : resources/views/' . $this->entity .'/'. $this->entity.'Form.blade.php');
+        File::put(resource_path('views/' . $this->entityNames .'/'. $this->entity.'Form.blade.php'), $viewContent);
+        $this->info('1- Create Form template : resources/views/' . $this->entityNames .'/'. $this->entity.'Form.blade.php');
     }
 
     protected function createViewIndex()
@@ -340,9 +369,10 @@ class GenerateCrudCommand extends Command
             $entityInstance = Str::camel($this->entity); // Instance de l'entité
 
             foreach ($this->getFields() as $field) {
+                $value = ucfirst($field);
                 if($thead !== '')
                     $thead .= "\n\t\t\t\t\t\t";
-                $thead .= "<th scope=\"col\">$field</th>";
+                $thead .= "<th scope=\"col\">$value</th>";
             }
             $thead .= "\n\t\t\t\t\t\t<th scope=\"col\">Actions</th>";
 
@@ -378,33 +408,35 @@ class GenerateCrudCommand extends Command
                         @endsection
 
                         @section('content')
-                            <h1> $entityName Details</h1>
+                        <div class="container">
+                        <h1> $entityName Details</h1>
 
-                            <a href="{{ route('admin.{$entityInstance}.create') }}\" class=\"btn btn-success btn-sm\">
-                                <button class="btn btn-success">
-                                    Create {$entityName}
-                                </button>
-                            </a>
+                        <a href="{{ route('admin.{$entityInstance}.create') }}\" class="">
+                            <button class="btn btn-success my-1">
+                                Create {$entityName}
+                            </button>
+                        </a>
+                        <div class="">
+                            <div class="card-body">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            $thead
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        $tbody
+                                    </tbody>
+                                </table>
 
-                            <div class="card">
-                                <div class="card-body">
-                                    <table class="table">
-                                        <thead>
-                                            <tr>
-                                                $thead
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            $tbody
-                                        </tbody>
-                                    </table>
-
-                                    <!-- Pagination -->
-                                    <div class="d-flex justify-content-center">
-                                        {{ \${$entityNames}->links('pagination::bootstrap-5') }}
-                                    </div>
+                                <!-- Pagination -->
+                                <div class="d-flex justify-content-center">
+                                    {{ \${$entityNames}->links('pagination::bootstrap-5') }}
                                 </div>
                             </div>
+                        </div>
+                        </div>
+
 
                             <!-- Modal -->
                             <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
@@ -443,7 +475,7 @@ class GenerateCrudCommand extends Command
 
                                         confirmDeleteBtn.addEventListener('click',async ()=>{
                                             const csrfToken = document.head.querySelector('meta[name="csrf-token"]').content;
-                                            const response = await fetch('/admin/{$entityInstance}/delete/'+id , {
+                                            const response = await fetch('/admin/{$this->entityNames}/delete/'+id , {
                                                 method: 'DELETE',
                                                 headers: {
                                                     'Content-Type': 'application/json',
@@ -467,25 +499,26 @@ class GenerateCrudCommand extends Command
                         @endsection
                         EOD;
 
-            File::put(resource_path('views/' . $this->entity . '/index.blade.php'), $content);
-            $this->info('2- Data List template : resources/views/' . $this->entity . '/index.blade.php');
+            File::put(resource_path('views/' . $this->entityNames . '/index.blade.php'), $content);
+            $this->info('2- Data List template : resources/views/' . $this->entityNames . '/index.blade.php');
     }
 
     protected function createRoutes()
     {
         $entityName = ucfirst($this->entity);
+        $entityNames = Str::plural(Str::lower($this->entity));
         $entityInstance = Str::camel($this->entity);
         $controllerNamespace = 'App\\Http\\Controllers\\'; // Ajoutez votre namespace ici si différent
 
         $routeContent = <<<EOD
         Route::prefix('admin')->group(function(){
-            Route::get('/{$entityInstance}', '{$controllerNamespace}{$entityName}Controller@index')->name('admin.{$entityInstance}.index');
-            Route::get('/{$entityInstance}/show/{id}', '{$controllerNamespace}{$entityName}Controller@show')->name('admin.{$entityInstance}.show');
-            Route::get('/{$entityInstance}/create', '{$controllerNamespace}{$entityName}Controller@create')->name('admin.{$entityInstance}.create');
-            Route::get('/{$entityInstance}/edit/{id}', '{$controllerNamespace}{$entityName}Controller@edit')->name('admin.{$entityInstance}.edit');
-            Route::post('/{$entityInstance}/store', '{$controllerNamespace}{$entityName}Controller@store')->name('admin.{$entityInstance}.store');
-            Route::post('/{$entityInstance}/update/{{$entityInstance}}', '{$controllerNamespace}{$entityName}Controller@update')->name('admin.{$entityInstance}.update');
-            Route::delete('/{$entityInstance}/delete/{{$entityInstance}}', '{$controllerNamespace}{$entityName}Controller@delete')->name('admin.{$entityInstance}.delete');
+            Route::get('/{$entityNames}', '{$controllerNamespace}{$entityName}Controller@index')->name('admin.{$entityInstance}.index');
+            Route::get('/{$entityNames}/show/{id}', '{$controllerNamespace}{$entityName}Controller@show')->name('admin.{$entityInstance}.show');
+            Route::get('/{$entityNames}/create', '{$controllerNamespace}{$entityName}Controller@create')->name('admin.{$entityInstance}.create');
+            Route::get('/{$entityNames}/edit/{id}', '{$controllerNamespace}{$entityName}Controller@edit')->name('admin.{$entityInstance}.edit');
+            Route::post('/{$entityNames}/store', '{$controllerNamespace}{$entityName}Controller@store')->name('admin.{$entityInstance}.store');
+            Route::post('/{$entityNames}/update/{{$entityInstance}}', '{$controllerNamespace}{$entityName}Controller@update')->name('admin.{$entityInstance}.update');
+            Route::delete('/{$entityNames}/delete/{{$entityInstance}}', '{$controllerNamespace}{$entityName}Controller@delete')->name('admin.{$entityInstance}.delete');
         });
         EOD;
 
