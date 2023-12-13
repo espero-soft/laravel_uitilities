@@ -338,7 +338,7 @@ class GenerateCrudCommand extends Command
             } else {
                 $content .= "\n\t\t<input type=\"text\" class=\"form-control my-1\" name=\"{$field}\" placeholder=\"{$field} ...\" id=\"{$field}\" value=\"{{ old('{$field}', isset(\${$entityInstance}) ? \${$entityInstance}->{$field} : '') }}\">\n";
             }
-        
+
             $content .= <<<HTML
                 @error('$field')
                     <div class="error">
